@@ -1,5 +1,6 @@
-from bs4 import BeautifulSoup, SoupStrainer
+from bs4 import BeautifulSoup
 import requests
+import os
 name_path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
 
 # USE THESE SITES TO CHECK:
@@ -15,9 +16,11 @@ class Request:
         self.start_year = start_yr
         self.end_year = end_yr
         self.word_tree = [trait]
+        self.path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
+        self.open_files = []
         self.count = 0
 
-    def treeMaker(self, url):
+    def tree_maker(self, url):
         page = requests.get(url)
         data = page.text
         soup = BeautifulSoup(data)
@@ -35,5 +38,16 @@ class Request:
                 break
         self.word_tree = list(set(self.word_tree))
 
+    def word_getter(self):
+        os.chdir(self.path)
+        all_files = os.listdir(self.path)
+        for file in all_files:
+            with open(file, 'r') as f:
+                self.open_files.append(f.read())
+            break
+
+
+
 
 test = Request("ass", 1000, 1500)
+test.word_getter()
