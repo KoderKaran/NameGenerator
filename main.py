@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import os
-name_path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
+import re
 
 # USE THESE SITES TO CHECK:
 # https://www.behindthename.com/name/john
@@ -9,8 +9,9 @@ name_path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
 
 
 class Request:
-    def __init__(self, trait, start_yr, end_yr):
+    def __init__(self, trait, gender, start_yr, end_yr):
         self.trait = trait  # MAKE A TREE OF SYNONYMS FOR TRAIT AND CHECK EACH NAME AGAINST THIS.
+        self.gender = gender.upper()
         self.init_url = "https://www.thesaurus.com/browse/"
         self.url = "https://www.thesaurus.com/browse/" + trait
         self.start_year = start_yr
@@ -18,6 +19,7 @@ class Request:
         self.word_tree = [trait]
         self.path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
         self.open_files = []
+        self.names_to_check = []
         self.count = 0
 
     def tree_maker(self, url):
@@ -41,13 +43,25 @@ class Request:
     def word_getter(self):
         os.chdir(self.path)
         all_files = os.listdir(self.path)
+        count = 0
         for file in all_files:
             with open(file, 'r') as f:
                 self.open_files.append(f.read())
-            break
+
+    def name_getter(self):
+        name_catcher = re.compile("(\w+),([A-Z]),(\d+)")
+        all_names = []
+        for i in self.open_files:
+            catch = re.findall(name_catcher, i)
+            all_names += catch
+        needed_names = []
+        for g in all_names:
+            gender = g[1]
+            if gender == self.gender:
+                needed_names.append(g[0])
+        self.names_to_check = list(set(needed_names))
 
 
-
-
-test = Request("ass", 1000, 1500)
+test = Request("ass", "f", 1000, 1500)
 test.word_getter()
+test.name_getter()
