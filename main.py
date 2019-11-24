@@ -3,11 +3,9 @@ import requests
 import os
 import re
 import json
-import time
 import random as ra
-import multiprocessing as mp
-import math as ma
 from collections import Counter
+import time
 
 # USE THESE SITES TO CHECK:
 # https://www.behindthename.com/name/john
@@ -28,12 +26,10 @@ class Request:
         self.path = "C:\\Users\\yugio\\PycharmProjects\\NameGenerator\\names"
         self.open_files = []
         self.names_to_check = []
-        self.count = 0
         self.results = []
-        self.times = 0
-        self.count = 0
-        self.fullNumOfWords = 0
+        self.fullNumOfWords = 5000
         self.numOfWords = 0
+        self.count = 0
 
     def tree_maker(self, url):
         page = requests.get(url)
@@ -42,15 +38,17 @@ class Request:
         table = soup.find('ul', 'css-1lc0dpe et6tpn80')
         related_text = [x.text for x in table.find_all('a')]
         while True:
-            for i in range(5):
+            for i in range(7):
                 # print(related_text[i])
-                self.word_tree.append(related_text[i])
+                self.word_tree.append(related_text[i].upper())
+                self.word_tree.append(related_text[-1].upper())
             self.count += 1
-            if self.count <= 3:
+            if self.count <= 4:
                 self.tree_maker(self.init_url + related_text[i])
             else:
                 break
         self.word_tree = list(set(self.word_tree))
+        print(self.word_tree)
 
     def file_getter(self):
         os.chdir(self.path)
@@ -68,10 +66,12 @@ class Request:
                 self.open_files.append(f.read())
 
     def time_getter(self):
-        # GET HOW MUCH TIME THEY HAVE THEN BASE THE AMOUNT OF WORDS OFF OF THAT
-        pass
+        inp = int(input("How many minutes do you have?"))
+        self.time = inp * 60
+        return int(10 * self.time)
 
     def name_getter(self):
+        # make it loop through name amounts then plot it to see the times.
         name_catcher = re.compile("(\w+),([A-Z]),(\d+)")
         all_names = []
         for i in self.open_files:
@@ -82,93 +82,61 @@ class Request:
             gender = g[1]
             if gender == self.gender:
                 needed_names.append(g[0])
-        self.fullNumOfWords = 1000
+        num = self.num_getter()
         new_names = [ra.choice(needed_names) for x in range(self.fullNumOfWords)]
         self.names_to_check = list(set(new_names))
+        self.name_searcher(num)
 
-    def initatior(self):
-        print("init")
+    def num_getter(self):
+        inp = int(input("How many names do you want to get?"))
+        return inp
+
+    def name_searcher(self, how_many):
         now = time.time()
-        with mp.Manager() as manager:
-            fr = manager.list()
-            num = manager.list()
-            split_by = ma.floor(len(self.names_to_check) / 10)
-            name1 = self.names_to_check[:split_by]
-            name2 = self.names_to_check[split_by+1:(2*split_by)]
-            name3 = self.names_to_check[(2*split_by)+1:(3*split_by)]
-            name4 = self.names_to_check[(3*split_by)+1:(4*split_by)]
-            name5 = self.names_to_check[(4*split_by)+1:(5*split_by)]
-            name6 = self.names_to_check[(5*split_by)+1:(6*split_by)]
-            name7 = self.names_to_check[(6*split_by)+1:(7*split_by)]
-            name8 = self.names_to_check[(7*split_by)+1:(8*split_by)]
-            name9 = self.names_to_check[(8*split_by)+1:(9*split_by)]
-            name10 = self.names_to_check[(9*split_by)+1:]
-            p1 = mp.Process(target=self.name_searcher, args=(name1, fr, num,))
-            p2 = mp.Process(target=self.name_searcher, args=(name2, fr, num,))
-            p3 = mp.Process(target=self.name_searcher, args=(name3, fr, num,))
-            p4 = mp.Process(target=self.name_searcher, args=(name4, fr, num,))
-            p5 = mp.Process(target=self.name_searcher, args=(name5, fr, num,))
-            p6 = mp.Process(target=self.name_searcher, args=(name6, fr, num,))
-            p7 = mp.Process(target=self.name_searcher, args=(name7, fr, num,))
-            p8 = mp.Process(target=self.name_searcher, args=(name8, fr, num,))
-            p9 = mp.Process(target=self.name_searcher, args=(name9, fr, num,))
-            p10 = mp.Process(target=self.name_searcher, args=(name10, fr, num,))
-            p1.start()
-            p2.start()
-            p3.start()
-            p4.start()
-            p5.start()
-            p6.start()
-            p7.start()
-            p8.start()
-            p9.start()
-            p10.start()
-            p1.join()
-            p2.join()
-            p3.join()
-            p4.join()
-            p5.join()
-            p6.join()
-            p7.join()
-            p8.join()
-            p9.join()
-            p10.join()
-            self.write(fr)
-        print('\r', 'Done!', end='\n')
-        print("time taken = " + str(time.time() - now))
-
-    def name_searcher(self, list_name, final_results, num):
-        for name in list_name:
-            num.append(0)
-            ETA = ((self.fullNumOfWords - len(num)) * 3)/15
-            print('\r', str(len(num)), "words out of", str(self.fullNumOfWords), "done.", "\rEstimated Time left=", str(ETA), "seconds", end=' ')
+        for name in self.names_to_check:
+            if len(set(self.results)) >= how_many:
+                break
+            print("\r", name, self.results, end='')
             url1 = self.name_url1 + name
             page1 = requests.get(url1)
             data1 = page1.text
             soup1 = BeautifulSoup(data1, features="html.parser")
             count = 0
             for i in soup1.findAll('div', {'class':'rc5'}):
-                word_list = i.text.strip().split()
-                # if word_list[0] in acceptable:
+                word_list = i.text.upper().strip().split()
+                print(word_list)
                 for word in self.word_tree:
                     if word in word_list:
                         count += 1
             for i in range(count):
-                final_results.append(name)
+                self.results.append(name)
+        print("minutes taken: " + str((time.time() - now)/60))
+        self.spit_results()
 
+    def spit_results(self):
+        result = Counter(self.results)
+        print("These are the top names that match the word " + self.trait + ":")
+        for r in result:
+            print(r)
+        self.write(result)
 
     def write(self, res):
-        result = Counter(res)
-        print(result)
-        with open("test.json", "w+") as file:
-            dump = json.dumps(result, indent=4)
-            file.write(dump)
+        with open("results.json") as file:
+            data = json.load(file)
+        with open("results.json", "w") as f:
+            for word in res.keys():
+                if word not in data.keys():
+                    data[word] = list()
+                if self.trait not in data[word]:
+                    data[word].append(self.trait)
+            json.dump(data, f, indent=4)
+        print("done")
 
 
 if __name__ == '__main__':
-    test = Request("Confident", "M", 1980, 1990)
+    test = Request("Cocky", "M", 1980, 1990)
     test.tree_maker(test.url)
     test.file_getter()
     test.name_getter()
-    test.initatior()
+
 
